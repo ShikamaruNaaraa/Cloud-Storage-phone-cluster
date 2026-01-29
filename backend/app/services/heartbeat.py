@@ -22,5 +22,5 @@ def handle_heartbeat(
     if available_storage is not None:
         if 0 <= available_storage <= device.storage_capacity:
             device.available_storage = available_storage
-    
+
     db.commit()

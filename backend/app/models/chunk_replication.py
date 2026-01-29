@@ -1,12 +1,29 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, Enum, ForeignKey, UniqueConstraint
 from app.core.database import Base
 
-class Chunk(Base):
-    __tablename__ = "chunks"
+class ChunkReplication(Base):
+    __tablename__ = "chunk_replication"
 
-    chunk_id = Column(Integer, primary_key=True, index=True)
-    file_id = Column(Integer, ForeignKey("files.file_id"), nullable=False)
+    replication_id = Column(Integer, primary_key=True, index=True)
 
-    chunk_index = Column(Integer, nullable=False)
-    chunk_hash = Column(String(255), nullable=False)
-    chunk_size = Column(Integer, nullable=False)
+    chunk_id = Column(
+        Integer,
+        ForeignKey("chunks.chunk_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    device_id = Column(
+        Integer,
+        ForeignKey("devices.device_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    replica_status = Column(
+        Enum("REPLICATING", "ACTIVE", "LOST", name="replica_status_enum"),
+        nullable=False,
+        default="REPLICATING",
+    )
+
+    __table_args__ = (
+        UniqueConstraint("chunk_id", "device_id", name="uq_chunk_device"),
+    )
