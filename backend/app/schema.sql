@@ -36,6 +36,7 @@ CREATE TABLE devices (
     device_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     device_name VARCHAR(255),
+    device_fingerprint VARCHAR(255) NOT NULL UNIQUE,
     status ENUM('ONLINE', 'OFFLINE') NOT NULL DEFAULT 'OFFLINE',
     last_heartbeat TIMESTAMP NOT NULL,
     storage_capacity BIGINT NOT NULL,

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Enum, BigInteger, TIMESTAMP, ForeignKey
+from sqlalchemy import Column, Integer, String, Enum, DateTime, ForeignKey
+from sqlalchemy.sql import func
 from app.core.database import Base
 
 class Device(Base):
@@ -7,10 +8,13 @@ class Device(Base):
     device_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
 
-    device_name = Column(String(255))
-    status = Column(Enum("ONLINE", "OFFLINE"), nullable=False, default="OFFLINE")
-    last_heartbeat = Column(TIMESTAMP, nullable=False)
+    device_fingerprint = Column(String(255), unique=True, nullable=False, index=True)
+    device_name = Column(String(255), nullable=False)
 
-    storage_capacity = Column(BigInteger, nullable=False)
-    available_storage = Column(BigInteger, nullable=False)
+    storage_capacity_mb = Column(Integer, nullable=False)
+    available_space_mb = Column(Integer, nullable=False)
 
+    status = Column(Enum("OFFLINE", "ONLINE"), default="OFFLINE", nullable=False)
+    last_heartbeat = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, server_default=func.now())
