@@ -67,3 +67,45 @@ async def initialize_upload(payload: FileUploadInit, db: Session = Depends(get_d
         "file_id": new_file.file_id,
         "message": "Metadata saved. You can now start sending chunks."
     }
+
+
+from fastapi import UploadFile, File
+import os
+
+TEMP_STORAGE_PATH = "./temp_chunks"
+os.makedirs(TEMP_STORAGE_PATH, exist_ok=True)
+
+@router.post("/files/{file_id}/upload-data")
+async def upload_file_data(
+    file_id: int, 
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db)
+):
+    # 1. Verify the file exists in DB
+    db_file = db.query(FileModel).filter(FileModel.file_id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # 2. Read the binary content
+    content = await file.read()
+    
+    # 3. Slice and Save Chunks locally
+    # We calculate size. (Total size / num_chunks)
+    chunk_size = len(content) // db_file.num_chunks
+    
+    for i in range(db_file.num_chunks):
+        start = i * chunk_size
+        end = start + chunk_size if i < db_file.num_chunks - 1 else len(content)
+        chunk_data = content[start:end]
+        
+        # Save to disk so phones can download it later
+        # Find the chunk_id from DB for this index
+        db_chunk = db.query(Chunk).filter(
+            Chunk.file_id == file_id, 
+            Chunk.chunk_index == i
+        ).first()
+
+        with open(f"{TEMP_STORAGE_PATH}/chunk_{db_chunk.chunk_id}.bin", "wb") as f:
+            f.write(chunk_data)
+
+    return {"status": "success", "message": "Chunks prepared on server."}
