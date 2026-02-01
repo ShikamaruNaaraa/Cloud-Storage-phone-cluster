@@ -60,7 +60,7 @@ def retrieve_file(db, file_id):
         .all()
     )
     # Retrieve each chunk and collect encrypted data
-
+    
     encrypted_chunks = []
 
     for chunk in chunks:

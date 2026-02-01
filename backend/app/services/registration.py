@@ -27,13 +27,14 @@ def register_device(
 
     # Otherwise create new device
     device = Device(
-        user_id=user_id,
-        device_name=device_name,
-        device_fingerprint=fingerprint,
-        status="OFFLINE",
-        last_heartbeat=datetime.utcnow(),
-        storage_capacity=storage_capacity,
-        available_storage=available_storage,
+        user_id = user_id,
+        device_name = device_name,
+        device_fingerprint = fingerprint,
+        status = "OFFLINE",
+        last_heartbeat = datetime.utcnow(),
+        storage_capacity = storage_capacity,
+        available_storage = available_storage,
+        created_at = datetime.utcnow() 
     )
 
     db.add(device)
