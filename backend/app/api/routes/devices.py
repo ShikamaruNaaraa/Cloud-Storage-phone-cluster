@@ -1,4 +1,5 @@
 from app.core.database import SessionLocal
+from sqlalchemy.orm import Session 
 from app.services.registration import register_device
 from app.models.chunk import Chunk
 from app.models.device import Device
@@ -7,25 +8,21 @@ from app.models.file import File as FileModel   # Avoid name conflict with fasta
 from app.models.chunk import Chunk             
 from pydantic import BaseModel
 from typing import List
-
+from app.core.database import get_db
 
 router = APIRouter()
 
 @router.post("/devices/register")
-def register_device_endpoint(payload: dict):
-    db = SessionLocal()
-    try:
-        result = register_device(
-            db=db,
-            user_id= payload["user_id"],
-            device_name = payload["device_name"],
-            storage_capacity= payload["storage_capacity"],
-            available_storage=payload["available_storage"],
-            fingerprint = payload["fingerprint"],
-        )
-        return result
-    finally:
-        db.close()
+def register_device_endpoint(payload: dict, db: Session = Depends(get_db)):
+    result = register_device(
+        db=db,
+        user_id=payload["user_id"],
+        device_name=payload["device_name"],
+        storage_capacity=payload["storage_capacity"],
+        available_storage=payload["available_storage"],
+        fingerprint=payload["fingerprint"],
+    )
+    return result
     
 
 class ChunkMetadata(BaseModel):
