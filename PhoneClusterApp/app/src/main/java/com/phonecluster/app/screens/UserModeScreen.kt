@@ -138,7 +138,7 @@ fun UserModeScreen(onBackClick: () -> Unit = {}) {
                             InfoRow("Name:", info.name)
                             InfoRow("Size:", FileChunker.formatFileSize(info.size))
                             InfoRow("Type:", info.mimeType ?: "Unknown")
-                            InfoRow("Total Chunks:", "${info.totalChunks} (10MB each)")
+                            InfoRow("Total Chunks:", "${info.totalChunks} (10KB each)")
                         }
                     }
 
