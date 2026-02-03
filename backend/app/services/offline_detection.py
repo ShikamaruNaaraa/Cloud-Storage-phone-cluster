@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
 from app.models.device import Device
 
-HEARTBEAT_TIMEOUT = timedelta(seconds=30)
+HEARTBEAT_TIMEOUT = timedelta(seconds=13)
 
 def mark_offline_devices(db: Session):
     cutoff = datetime.now(timezone.utc) - HEARTBEAT_TIMEOUT

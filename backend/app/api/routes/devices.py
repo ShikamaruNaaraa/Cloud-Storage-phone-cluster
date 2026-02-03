@@ -7,12 +7,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.models.file import File as FileModel   # Avoid name conflict with fastapi 'File'
 from app.models.chunk import Chunk             
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional 
 from app.core.database import get_db
 from fastapi import UploadFile, File
 import os
 from app.services.distribute_chunk import distribute_chunk
 import hashlib
+from app.services.heartbeat import handle_heartbeat
+
 
 router = APIRouter()
 
@@ -40,6 +42,11 @@ class FileUploadInit(BaseModel):
     file_size: int
     num_chunks: int
     chunks: List[ChunkMetadata] # List of hashes the user calculated
+
+class HeartbeatRequest(BaseModel):
+    device_id: int
+    available_storage: Optional[int] = None
+
 
 # File upload initialization endpoint:
 @router.post("/files/init")
@@ -107,3 +114,21 @@ async def upload_chunk_data(
     await distribute_chunk(db, db_chunk)
 
     return {"status": "success", "chunk_id": db_chunk.chunk_id}
+
+
+# heartbeat endpoint
+@router.post("/devices/heartbeat")
+def heartbeat_endpoint(
+    payload: HeartbeatRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        handle_heartbeat(
+            db=db,
+            device_id=payload.device_id,
+            available_storage=payload.available_storage
+        )
+        return {"status": "ok"}
+
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

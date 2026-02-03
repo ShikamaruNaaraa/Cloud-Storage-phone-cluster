@@ -10,12 +10,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.phonecluster.app.storage.PreferencesManager
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
+import com.phonecluster.app.utils.heartbeat.HeartbeatManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StorageModeScreen(onBackClick: () -> Unit = {}) {
     val context = LocalContext.current
     val deviceId = PreferencesManager.getDeviceId(context) ?: -1
+
+    LaunchedEffect(Unit) {
+        if (deviceId != -1) {
+            HeartbeatManager.start(
+                serverBaseUrl = "http://10.189.17.12:8000",
+                deviceId = deviceId
+            )
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            HeartbeatManager.stop()
+        }
+    }
 
     Scaffold(
         topBar = {
