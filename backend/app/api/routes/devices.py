@@ -14,7 +14,12 @@ import os
 from app.services.distribute_chunk import distribute_chunk
 import hashlib
 from app.services.heartbeat import handle_heartbeat
+from datetime import datetime, timezone
+from pathlib import Path
+from app.core.connection_manager import manager
 
+
+Path("temp_chunks").mkdir(exist_ok=True)
 
 router = APIRouter()
 
@@ -53,10 +58,12 @@ class HeartbeatRequest(BaseModel):
 async def initialize_upload(payload: FileUploadInit, db: Session = Depends(get_db)):
     # A. Create the File record
     new_file = FileModel(
-        user_id=payload.user_id,
-        file_name=payload.file_name,
-        file_size=payload.file_size,
-        num_chunks=payload.num_chunks
+    user_id=payload.user_id,
+    file_name=payload.file_name,
+    file_size=payload.file_size,
+    num_chunks=payload.num_chunks,
+    upload_timestamp=datetime.now(timezone.utc), 
+    file_type="bin",
     )
     db.add(new_file)
     db.flush() # This generates the file_id without finishing the transaction
@@ -111,7 +118,9 @@ async def upload_chunk_data(
     # 5. TRIGGER REPLICATION
     # Now that this specific chunk is safe on the server, 
     # we tell the cluster to come get it.
-    await distribute_chunk(db, db_chunk)
+    print("Using manager:", manager)
+    await distribute_chunk(db, db_chunk, manager)
+
 
     return {"status": "success", "chunk_id": db_chunk.chunk_id}
 
