@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import com.phonecluster.app.utils.FileChunker
 import com.phonecluster.app.utils.FileChunk
 import com.phonecluster.app.utils.ChunkedFileInfo
+import com.phonecluster.app.utils.ChunkUploader
+import com.phonecluster.app.storage.PreferencesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,6 +40,11 @@ fun UserModeScreen(onBackClick: () -> Unit = {}) {
     var chunkingProgress by remember { mutableStateOf(0 to 0) } // (current, total)
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    // Upload state
+    var isUploading by remember { mutableStateOf(false) }
+    var uploadProgress by remember { mutableStateOf(0 to 0) } // (uploaded, total)
+    var uploadedFileId by remember { mutableStateOf<Int?>(null) }
+
     // File picker launcher
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -46,6 +54,7 @@ fun UserModeScreen(onBackClick: () -> Unit = {}) {
             fileInfo = FileChunker.getFileInfo(context, it)
             chunks = emptyList() // Reset chunks when new file selected
             errorMessage = null
+            uploadedFileId = null
         }
     }
 
@@ -104,6 +113,23 @@ fun UserModeScreen(onBackClick: () -> Unit = {}) {
                         Text(
                             text = error,
                             color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Success Message
+                uploadedFileId?.let { id ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "✅ File uploaded successfully!\nFile ID: $id",
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
                             modifier = Modifier.padding(16.dp)
                         )
                     }
@@ -186,6 +212,72 @@ fun UserModeScreen(onBackClick: () -> Unit = {}) {
                             text = "Processing chunk ${chunkingProgress.first}...",
                             style = MaterialTheme.typography.bodySmall
                         )
+                    }
+
+                    // Upload Button (only show when chunks are ready)
+                    if (chunks.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    isUploading = true
+                                    errorMessage = null
+                                    uploadedFileId = null
+                                    uploadProgress = 0 to chunks.size
+
+                                    try {
+                                        // IMPORTANT: Change this to your PC's IP address
+                                        val baseUrl = "http://192.168.1.8:8000"
+
+                                        val userId = 1 // TODO: Get from actual user session
+
+                                        val fileId = withContext(Dispatchers.IO) {
+                                            ChunkUploader.uploadAll(
+                                                baseUrl = baseUrl,
+                                                userId = userId,
+                                                fileInfo = info,
+                                                chunks = chunks
+                                            ) { uploaded, total ->
+                                                uploadProgress = uploaded to total
+                                            }
+                                        }
+
+                                        uploadedFileId = fileId
+                                    } catch (e: Exception) {
+                                        errorMessage = "Upload failed: ${e.message}"
+                                        e.printStackTrace()
+                                    } finally {
+                                        isUploading = false
+                                    }
+                                }
+                            },
+                            enabled = !isUploading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiary
+                            )
+                        ) {
+                            Icon(Icons.Default.CloudUpload, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (isUploading) "Uploading..." else "Upload to Server")
+                        }
+
+                        // Upload Progress
+                        if (isUploading) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = uploadProgress.first.toFloat() / uploadProgress.second.toFloat(),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                text = "Uploaded ${uploadProgress.first}/${uploadProgress.second} chunks",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
 

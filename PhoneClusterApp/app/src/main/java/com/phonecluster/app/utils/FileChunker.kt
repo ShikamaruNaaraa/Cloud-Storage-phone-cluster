@@ -31,8 +31,7 @@ data class ChunkedFileInfo(
 )
 
 object FileChunker {
-    private const val CHUNK_SIZE = 10 * 1024 // 10 KB in bytes
-
+    private const val CHUNK_SIZE = 10 * 1024 * 1024 // 10 MB in bytes (changed from 10KB)
 
     /**
      * Get file information without reading the entire file
