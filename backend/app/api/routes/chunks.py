@@ -7,6 +7,7 @@ from app.core.chunk_waiter import set_chunk_arrived
 from app.core.database import get_db
 from app.models.chunk import Chunk
 from fastapi import Request
+from app.core.constants import TEMP_CHUNK_DIR
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ def download_chunk(chunk_id: int, db: Session = Depends(get_db)):
     if not c:
         raise HTTPException(status_code=404, detail="Chunk not found in DB")
 
-    path = TEMP_DIR / f"chunk_{chunk_id}.bin"
+    path = TEMP_CHUNK_DIR / f"chunk_{chunk_id}.bin"
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"Chunk file missing: {path}")
 

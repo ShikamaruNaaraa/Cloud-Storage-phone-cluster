@@ -21,21 +21,23 @@ from app.core.constants import TEMP_CHUNK_DIR
 
 router = APIRouter()
 
-@router.get("/files/{file_id}/download")    
+@router.get("/files/{file_id}/download")
 async def download_file(file_id: int, db: Session = Depends(get_db)):
     try:
+        # 1. Ensure all chunks are fetched locally
         chunks = await fetch_all_chunks_for_file(db, file_id, manager)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-    path = TEMP_CHUNK_DIR / f"chunk_{db_chunk.chunk_id}.bin"
+
     final_path = TEMP_CHUNK_DIR / f"file_{file_id}.bin"
 
     try:
+        # 2. Assemble chunks in order
         assemble_file_from_chunks(chunks, final_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+    # 3. Serve assembled file
     return FileResponse(
         final_path,
         media_type="application/octet-stream",
