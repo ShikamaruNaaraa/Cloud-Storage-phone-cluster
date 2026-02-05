@@ -17,6 +17,7 @@ from app.services.heartbeat import handle_heartbeat
 from datetime import datetime, timezone
 from pathlib import Path
 from app.core.connection_manager import manager
+from fastapi.responses import FileResponse
 
 
 Path("temp_chunks").mkdir(exist_ok=True)
@@ -141,3 +142,16 @@ def heartbeat_endpoint(
 
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/chunks/{chunk_id}/download")
+def download_chunk(chunk_id: int):
+    path = f"./temp_chunks/chunk_{chunk_id}.bin"
+
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Chunk file not found on server")
+
+    return FileResponse(
+        path,
+        media_type="application/octet-stream",
+        filename=f"chunk_{chunk_id}.bin"
+    )

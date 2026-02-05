@@ -1,25 +1,23 @@
-
+from typing import Dict
 from fastapi import WebSocket
 
 class ConnectionManager:
     def __init__(self):
-        # Maps device_id -> WebSocket
-        self.active_connections: dict[int, WebSocket] = {}
+        self.active: Dict[int, WebSocket] = {}
 
     async def connect(self, device_id: int, websocket: WebSocket):
-        self.active_connections[device_id] = websocket
+        await websocket.accept()
+        self.active[device_id] = websocket
 
     def disconnect(self, device_id: int):
-        self.active_connections.pop(device_id, None)
+        self.active.pop(device_id, None)
 
-    async def send_command(self, device_id: int, command_type: str, data: dict):
-        if device_id in self.active_connections:
-            ws = self.active_connections[device_id]
-            await ws.send_json({
-                "type": command_type,
-                "payload": data
-            })
-            return True
-        return False
+    async def send_json_to_device(self, device_id: int, payload: dict) -> bool:
+        ws = self.active.get(device_id)
+        if not ws:
+            return False
+        await ws.send_json(payload)
+        return True
 
+# ✅ THIS is what your import expects
 manager = ConnectionManager()

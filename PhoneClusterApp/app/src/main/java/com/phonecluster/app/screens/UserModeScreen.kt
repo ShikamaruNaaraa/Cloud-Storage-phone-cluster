@@ -228,7 +228,7 @@ fun UserModeScreen(onBackClick: () -> Unit = {}) {
 
                                     try {
                                         // IMPORTANT: Change this to your PC's IP address
-                                        val baseUrl = "http://10.124.156.168:8000"
+                                        val baseUrl = "http://10.0.2.2:8000"
 
                                         val userId = 1 // TODO: Get from actual user session
 
