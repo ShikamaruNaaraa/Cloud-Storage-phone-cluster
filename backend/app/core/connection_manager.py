@@ -18,6 +18,14 @@ class ConnectionManager:
             return False
         await ws.send_json(payload)
         return True
+    
+    async def send_command(self, device_id: int, command_type: str, data: dict) -> bool:
+        payload = {
+            "type": "command",
+            "command": command_type,
+            "data": data
+        }
+        return await self.send_json_to_device(device_id, payload)
 
 # ✅ THIS is what your import expects
 manager = ConnectionManager()
